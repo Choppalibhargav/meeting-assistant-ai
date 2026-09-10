@@ -1,6 +1,16 @@
 ﻿import React, { useState } from "react";
-import { FiChevronDown, FiChevronRight, FiClock, FiCheck, FiZap, FiFileText } from "react-icons/fi";
+import {
+  FiChevronDown,
+  FiChevronRight,
+  FiClock,
+  FiCheck,
+  FiZap,
+  FiFileText,
+  FiUploadCloud,
+} from "react-icons/fi";
 import { useMeetingStore } from "../store/meetingStore";
+import Card from "../../../shared/components/ui/Card";
+import Badge from "../../../shared/components/ui/Badge";
 
 export const RecentMeetings: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -25,101 +35,119 @@ export const RecentMeetings: React.FC = () => {
   };
 
   return (
-    <div className="border-t border-slate-800 pt-3">
+    <div className="pt-2">
+      {/* Group Header Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between text-slate-400 hover:text-slate-200 text-xs font-medium py-1 transition-colors cursor-pointer"
+        className="w-full flex items-center justify-between text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] text-xs font-semibold py-1.5 transition-colors cursor-pointer select-none"
       >
-        <span className="flex items-center gap-1.5">
-          {isOpen ? <FiChevronDown className="w-3.5 h-3.5" /> : <FiChevronRight className="w-3.5 h-3.5" />}
-          Meeting History & Outcomes
-          <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-slate-400">
+        <span className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+          {isOpen ? (
+            <FiChevronDown className="w-3.5 h-3.5 text-[#86868B]" />
+          ) : (
+            <FiChevronRight className="w-3.5 h-3.5 text-[#86868B]" />
+          )}
+          <span>Meeting History & Outcomes</span>
+          <Badge variant="gray" size="sm">
             {recentMeetings.length}
-          </span>
+          </Badge>
         </span>
-        <span className="text-[10px] text-indigo-400 font-medium">Click to view details</span>
+        <span className="text-[10px] text-[#0071E3] dark:text-[#0A84FF] font-medium lowercase">
+          {isOpen ? "hide" : "show"}
+        </span>
       </button>
 
       {isOpen && (
-        <div className="mt-2 space-y-2 max-h-56 overflow-y-auto pr-1">
+        <div className="mt-1.5">
           {recentMeetings.length === 0 ? (
-            <p className="text-[11px] text-slate-500 text-center py-3 bg-slate-900/40 rounded border border-slate-800/60">
-              No meetings recorded yet. Start a session above!
-            </p>
+            <Card variant="inset" padding="md" className="text-center">
+              <p className="text-xs text-[#86868B] dark:text-[#A1A1A6]">
+                No meetings recorded yet. Start a session above!
+              </p>
+            </Card>
           ) : (
-            recentMeetings.map((m) => {
-              const hasOutcome = Boolean(m.outcome);
-              const hasTranscript = Boolean(m.transcript);
+            <Card padding="none" className="overflow-hidden divide-y divide-black/[0.05] dark:divide-white/[0.06]">
+              <div className="max-h-56 overflow-y-auto divide-y divide-black/[0.05] dark:divide-white/[0.06]">
+                {recentMeetings.map((m) => {
+                  const hasOutcome = Boolean(m.outcome);
+                  const hasTranscript = Boolean(m.transcript);
 
-              return (
-                <div
-                  key={m.id}
-                  className="bg-slate-900/70 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg p-2.5 transition-all text-xs space-y-2"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1 pr-2">
-                      <h4 className="font-semibold text-slate-200 truncate">{m.title}</h4>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                        <span className="text-indigo-400 font-medium">{m.platform}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-0.5">
-                          <FiClock className="w-2.5 h-2.5" />
-                          {formatDuration(m.duration)}
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => setSelectedMeeting(m)}
+                      className="p-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors cursor-pointer flex flex-col gap-2 group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] truncate group-hover:text-[#0071E3] dark:group-hover:text-[#0A84FF] transition-colors">
+                            {m.title}
+                          </h3>
+
+                          <div className="flex items-center gap-2 text-[10px] text-[#86868B] dark:text-[#A1A1A6] mt-0.5">
+                            <span className="font-medium text-[#0071E3] dark:text-[#0A84FF]">
+                              {m.platform}
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5">
+                              <FiClock className="w-2.5 h-2.5" />
+                              {formatDuration(m.duration)}
+                            </span>
+                            <span>•</span>
+                            <span>{formatDate(m.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {m.syncStatus === "synced" ? (
+                            <Badge variant="green" size="sm">
+                              <FiCheck className="w-2.5 h-2.5" />
+                              SQLite
+                            </Badge>
+                          ) : (
+                            <button
+                              onClick={() => syncMeeting(m.id)}
+                              disabled={!backendOnline}
+                              title="Sync to SQLite"
+                              className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-[#1D1D1F] dark:text-[#F5F5F7] disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                              <FiUploadCloud className="w-2.5 h-2.5" />
+                              Sync
+                            </button>
+                          )}
+                          <FiChevronRight className="w-3.5 h-3.5 text-[#86868B] group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </div>
+
+                      {/* Bottom row pills */}
+                      <div className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center gap-1.5">
+                          {hasOutcome ? (
+                            <Badge variant="purple" size="sm">
+                              <FiZap className="w-2.5 h-2.5" />
+                              Outcomes Ready
+                            </Badge>
+                          ) : hasTranscript ? (
+                            <Badge variant="orange" size="sm">
+                              <FiFileText className="w-2.5 h-2.5" />
+                              Transcript Added
+                            </Badge>
+                          ) : (
+                            <span className="text-[#86868B] dark:text-[#A1A1A6] text-[10px]">
+                              No transcript
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="text-[#0071E3] dark:text-[#0A84FF] font-medium text-[10px] group-hover:underline">
+                          {hasOutcome ? "View Outcomes" : "Add Transcript"}
                         </span>
-                        <span>•</span>
-                        <span>{formatDate(m.createdAt)}</span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1">
-                      {m.syncStatus === "synced" ? (
-                        <span className="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-0.5">
-                          <FiCheck className="w-2.5 h-2.5" />
-                          SQLite
-                        </span>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            syncMeeting(m.id);
-                          }}
-                          disabled={!backendOnline}
-                          className="text-[9px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 cursor-pointer"
-                        >
-                          Sync
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Badges & Actions */}
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
-                    <div className="flex items-center gap-1.5">
-                      {hasOutcome ? (
-                        <span className="text-[9px] font-medium text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 flex items-center gap-1">
-                          <FiZap className="w-2.5 h-2.5 text-indigo-400" />
-                          Outcomes Ready
-                        </span>
-                      ) : hasTranscript ? (
-                        <span className="text-[9px] font-medium text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
-                          <FiFileText className="w-2.5 h-2.5 text-amber-400" />
-                          Transcript Added
-                        </span>
-                      ) : (
-                        <span className="text-[9px] text-slate-500">No transcript yet</span>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => setSelectedMeeting(m)}
-                      className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/80 hover:bg-slate-800"
-                    >
-                      {hasOutcome ? "View Outcomes →" : "Add Transcript / AI →"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+                  );
+                })}
+              </div>
+            </Card>
           )}
         </div>
       )}

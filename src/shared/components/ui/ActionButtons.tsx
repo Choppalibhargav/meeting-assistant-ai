@@ -1,6 +1,7 @@
 ﻿import React from "react";
 import { FiPlay, FiSquare, FiRotateCcw, FiUploadCloud, FiCheck, FiZap } from "react-icons/fi";
 import { useMeetingStore } from "../../../features/meeting/store/meetingStore";
+import AppleButton from "./AppleButton";
 
 export const ActionButtons: React.FC = () => {
   const status = useMeetingStore((state) => state.status);
@@ -15,57 +16,61 @@ export const ActionButtons: React.FC = () => {
   if (status === "active") {
     return (
       <div className="space-y-2">
-        <button
+        <AppleButton
+          variant="destructive"
+          size="lg"
+          className="w-full"
+          icon={<FiSquare className="w-4 h-4 fill-current" />}
           onClick={() => endMeeting()}
-          className="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-900/30 active:scale-[0.99] transition-all cursor-pointer"
         >
-          <FiSquare className="w-3.5 h-3.5 fill-current" />
-          End Meeting & Process Outcomes
-        </button>
+          End Meeting & Extract Outcomes
+        </AppleButton>
       </div>
     );
   }
 
   if (status === "ended") {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {/* Prominent View Outcomes Button */}
-        <button
+        <AppleButton
+          variant="primary"
+          size="lg"
+          className="w-full shadow-md shadow-[#0071E3]/25"
+          icon={<FiZap className="w-4 h-4 fill-current" />}
           onClick={() => currentMeeting && setSelectedMeeting(currentMeeting)}
-          className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30 active:scale-[0.99] transition-all cursor-pointer"
         >
-          <FiZap className="w-3.5 h-3.5 fill-current" />
           View AI Summary & Outcomes
-        </button>
+        </AppleButton>
 
         <div className="flex items-center gap-2">
           {currentMeeting?.syncStatus !== "synced" ? (
-            <button
-              onClick={() => currentMeeting && syncMeeting(currentMeeting.id)}
+            <AppleButton
+              variant="secondary"
+              size="md"
+              className="flex-1"
               disabled={!backendOnline}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
-                backendOnline
-                  ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer"
-                  : "bg-slate-900 text-slate-500 cursor-not-allowed border border-slate-800"
-              }`}
+              icon={<FiUploadCloud className="w-3.5 h-3.5" />}
+              onClick={() => currentMeeting && syncMeeting(currentMeeting.id)}
             >
-              <FiUploadCloud className="w-3.5 h-3.5" />
-              {backendOnline ? "Sync SQLite" : "Backend Offline"}
-            </button>
+              {backendOnline ? "Sync SQLite" : "API Offline"}
+            </AppleButton>
           ) : (
-            <div className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center justify-center gap-1.5">
-              <FiCheck className="w-3.5 h-3.5 text-emerald-400" />
-              Saved to SQLite
+            <div className="flex-1 h-9 px-4 rounded-full bg-[#34C759]/10 text-[#248A3D] dark:text-[#30D158] text-xs font-medium flex items-center justify-center gap-1.5 border border-[#34C759]/20">
+              <FiCheck className="w-3.5 h-3.5 text-[#34C759] dark:text-[#30D158]" />
+              <span>Saved in SQLite</span>
             </div>
           )}
 
-          <button
+          <AppleButton
+            variant="secondary"
+            size="md"
+            className="flex-1"
+            icon={<FiRotateCcw className="w-3.5 h-3.5" />}
             onClick={() => resetMeeting()}
-            className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <FiRotateCcw className="w-3.5 h-3.5" />
             New Session
-          </button>
+          </AppleButton>
         </div>
       </div>
     );
@@ -73,13 +78,15 @@ export const ActionButtons: React.FC = () => {
 
   return (
     <div>
-      <button
+      <AppleButton
+        variant="apple-dark"
+        size="lg"
+        className="w-full shadow-sm"
+        icon={<FiPlay className="w-4 h-4 fill-current" />}
         onClick={() => startMeeting()}
-        className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 active:scale-[0.99] transition-all cursor-pointer"
       >
-        <FiPlay className="w-3.5 h-3.5 fill-current" />
         Start Meeting Capture
-      </button>
+      </AppleButton>
     </div>
   );
 };

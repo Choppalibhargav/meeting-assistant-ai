@@ -3,17 +3,20 @@ import {
   FiArrowLeft,
   FiCheckCircle,
   FiClock,
-  FiCheckSquare,
-  FiSquare,
   FiAlertTriangle,
   FiHelpCircle,
   FiCopy,
   FiCheck,
   FiZap,
   FiFileText,
-  FiRefreshCw
+  FiRefreshCw,
+  FiCheckSquare,
 } from "react-icons/fi";
 import { useMeetingStore } from "../store/meetingStore";
+import Card from "../../../shared/components/ui/Card";
+import Badge from "../../../shared/components/ui/Badge";
+import AppleButton from "../../../shared/components/ui/AppleButton";
+import { useToast } from "../../../shared/components/ui/Toast";
 
 export const MeetingOutcomeView: React.FC = () => {
   const selectedMeeting = useMeetingStore((state) => state.selectedMeetingForDetails);
@@ -23,18 +26,21 @@ export const MeetingOutcomeView: React.FC = () => {
   const toggleActionItemStatus = useMeetingStore((state) => state.toggleActionItemStatus);
   const isProcessingAI = useMeetingStore((state) => state.isProcessingAI);
 
+  const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
 
   if (!selectedMeeting) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-xs text-slate-400">No meeting selected.</p>
-        <button
+      <div className="p-8 text-center">
+        <p className="text-xs text-[#86868B] dark:text-[#A1A1A6]">No meeting selected.</p>
+        <AppleButton
+          variant="secondary"
+          size="sm"
           onClick={() => setSelectedMeeting(null)}
-          className="mt-2 text-xs text-indigo-400 hover:underline cursor-pointer"
+          className="mt-3"
         >
           Return to home
-        </button>
+        </AppleButton>
       </div>
     );
   }
@@ -77,282 +83,333 @@ ${outcome.openQuestions.length > 0 ? `\n---\n## ❓ Open Questions\n${outcome.op
 
     navigator.clipboard.writeText(md);
     setCopied(true);
+    showToast("Meeting minutes copied to clipboard", "success");
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="flex-1 flex flex-col space-y-3 p-3.5 overflow-y-auto">
-      {/* Top Bar with Back Button */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+    <div className="flex-1 flex flex-col space-y-4 w-full">
+      {/* Top Bar with Back Button & Actions */}
+      <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
         <button
           onClick={() => setSelectedMeeting(null)}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#0A84FF] hover:opacity-80 transition-opacity cursor-pointer select-none"
         >
-          <FiArrowLeft className="w-3.5 h-3.5" />
-          Back
+          <FiArrowLeft className="w-4 h-4" />
+          <span>Back to Dashboard</span>
         </button>
 
         <div className="flex items-center gap-2">
           {outcome && (
-            <button
+            <AppleButton
+              variant="secondary"
+              size="sm"
               onClick={copyToClipboard}
-              className="flex items-center gap-1 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-1 rounded border border-slate-700 transition-colors cursor-pointer"
-              title="Copy formatted meeting minutes to clipboard"
+              icon={copied ? <FiCheck className="w-3 h-3 text-[#34C759]" /> : <FiCopy className="w-3 h-3" />}
             >
-              {copied ? <FiCheck className="w-3 h-3 text-emerald-400" /> : <FiCopy className="w-3 h-3" />}
-              {copied ? "Copied!" : "Export MD"}
-            </button>
+              {copied ? "Copied" : "Export MD"}
+            </AppleButton>
           )}
 
-          <button
+          <AppleButton
+            variant="secondary"
+            size="sm"
             onClick={() => setActiveView("transcript")}
-            className="flex items-center gap-1 text-[11px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded border border-indigo-500/30 transition-colors cursor-pointer"
+            icon={<FiFileText className="w-3 h-3 text-[#0071E3]" />}
           >
-            <FiFileText className="w-3 h-3" />
-            {hasTranscript ? "Edit Transcript" : "+ Add Transcript"}
-          </button>
+            {hasTranscript ? "Edit Transcript" : "Add Transcript"}
+          </AppleButton>
         </div>
       </div>
 
-      {/* Title & Metadata */}
-      <div>
-        <h2 className="text-sm font-bold text-white tracking-tight truncate">{selectedMeeting.title}</h2>
-        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-          <span className="text-indigo-400 font-medium">{selectedMeeting.platform}</span>
-          <span>•</span>
-          <span>{new Date(selectedMeeting.createdAt).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-          <span>•</span>
-          <span className="flex items-center gap-0.5">
-            <FiClock className="w-2.5 h-2.5" />
-            {Math.floor(selectedMeeting.duration / 60)}m {selectedMeeting.duration % 60}s
-          </span>
-          <span>•</span>
-          <span className={hasTranscript ? "text-emerald-400 font-medium" : "text-amber-400"}>
-            {hasTranscript ? "Transcript Attached" : "No Transcript Yet"}
-          </span>
+      {/* Meeting Title & Meta Card */}
+      <Card padding="md" className="space-y-1.5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7] truncate">
+              {selectedMeeting.title}
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-[#86868B] dark:text-[#A1A1A6] mt-1 flex-wrap">
+              <Badge variant="blue" size="sm">
+                {selectedMeeting.platform}
+              </Badge>
+              <span>•</span>
+              <span>
+                {new Date(selectedMeeting.createdAt).toLocaleDateString([], {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <FiClock className="w-3 h-3" />
+                {Math.floor(selectedMeeting.duration / 60)}m {selectedMeeting.duration % 60}s
+              </span>
+            </div>
+          </div>
+
+          <Badge variant={hasTranscript ? "green" : "orange"} size="md">
+            {hasTranscript ? "Transcript Available" : "No Transcript"}
+          </Badge>
         </div>
-      </div>
+      </Card>
 
       {/* No Outcome Yet State */}
       {!outcome ? (
-        <div className="p-5 bg-slate-900/60 rounded-xl border border-dashed border-slate-800 text-center space-y-3 my-2">
-          <div className="w-10 h-10 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/20">
-            <FiZap className="w-5 h-5" />
+        <Card variant="inset" padding="lg" className="text-center space-y-4 my-2">
+          <div className="w-12 h-12 rounded-2xl bg-[#0071E3]/10 text-[#0071E3] dark:text-[#0A84FF] flex items-center justify-center mx-auto shadow-sm">
+            <FiZap className="w-6 h-6 fill-current" />
           </div>
+
           <div>
-            <h3 className="text-xs font-semibold text-white">Generate Structured Outcomes</h3>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Extract executive summary, highlighted decisions, action items, and blockers.
+            <h3 className="text-sm font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
+              Extract Structured Outcomes
+            </h3>
+            <p className="text-xs text-[#86868B] dark:text-[#A1A1A6] mt-1 leading-normal max-w-md mx-auto">
+              Automatically identify key decisions, assigned tasks with owners & deadlines, risks, and a comprehensive executive summary.
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 pt-1">
-            <button
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2 max-w-md mx-auto w-full">
+            <AppleButton
+              variant="primary"
+              size="md"
+              className="w-full sm:w-auto"
+              isLoading={isProcessingAI}
+              icon={<FiZap className="w-3.5 h-3.5 fill-current" />}
               onClick={() => generateOutcomes(selectedMeeting.id)}
-              disabled={isProcessingAI}
-              className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-900/30 cursor-pointer"
             >
-              {isProcessingAI ? (
-                <>
-                  <FiRefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  Analyzing with AI...
-                </>
-              ) : (
-                <>
-                  <FiZap className="w-3.5 h-3.5 fill-current" />
-                  {hasTranscript ? "Extract Outcomes from Transcript" : "Extract Outcomes with AI (Sample or Attached)"}
-                </>
-              )}
-            </button>
+              {hasTranscript
+                ? "Extract Outcomes from Transcript"
+                : "Extract Outcomes with AI"}
+            </AppleButton>
 
-            <button
+            <AppleButton
+              variant="secondary"
+              size="md"
+              className="w-full sm:w-auto"
               onClick={() => setActiveView("transcript")}
-              className="w-full py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 cursor-pointer"
             >
-              {hasTranscript ? "View / Edit Transcript" : "✍️ Paste / Upload Transcript First"}
-            </button>
+              {hasTranscript ? "View / Edit Transcript" : "Paste or Upload Transcript"}
+            </AppleButton>
           </div>
-        </div>
+        </Card>
       ) : (
-        <div className="space-y-3.5">
-          {/* Engine Pill */}
-          <div className="flex items-center justify-between text-[10px] text-slate-400 bg-slate-900/50 px-2.5 py-1.5 rounded-md border border-slate-800/80">
-            <span className="flex items-center gap-1">
-              <FiZap className="w-3 h-3 text-indigo-400" />
-              Engine: <span className="text-slate-300 font-mono">{outcome.modelUsed}</span>
+        <div className="space-y-4">
+          {/* AI Engine Banner */}
+          <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-black/[0.025] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06] text-xs text-[#86868B] dark:text-[#A1A1A6]">
+            <span className="flex items-center gap-1.5">
+              <FiZap className="w-3.5 h-3.5 text-[#AF52DE]" />
+              Intelligence Engine: <span className="font-mono font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">{outcome.modelUsed}</span>
             </span>
             <button
               onClick={() => generateOutcomes(selectedMeeting.id)}
               disabled={isProcessingAI}
-              className="text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 cursor-pointer"
+              className="text-[#0071E3] dark:text-[#0A84FF] hover:underline flex items-center gap-1 cursor-pointer font-medium"
             >
-              <FiRefreshCw className={`w-2.5 h-2.5 ${isProcessingAI ? "animate-spin" : ""}`} />
+              <FiRefreshCw className={`w-3 h-3 ${isProcessingAI ? "animate-spin" : ""}`} />
               Re-analyze
             </button>
           </div>
 
-          {/* 1. DECISIONS HIGHLIGHTED */}
-          <div className="bg-indigo-950/30 rounded-xl border border-indigo-500/30 p-3 shadow-sm shadow-indigo-950/50">
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="p-1 rounded bg-indigo-500/20 text-indigo-300">
-                <FiCheckCircle className="w-3.5 h-3.5" />
-              </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-200">
-                Decisions Made ({outcome.decisions.length})
-              </h3>
-            </div>
-
-            <div className="space-y-1.5">
-              {outcome.decisions.map((decision, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-2 bg-slate-900/80 p-2 rounded-lg border border-indigo-500/20 text-xs"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" />
-                  <p className="text-slate-100 font-medium leading-relaxed">{decision}</p>
+          {/* Side-by-Side Grid for Decisions & Action Items on Desktop */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            {/* 1. KEY DECISIONS (Apple Purple Accent) */}
+            <Card padding="md" className="space-y-2.5 border-l-4 border-l-[#AF52DE] h-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-[#AF52DE]/10 text-[#AF52DE] dark:bg-[#BF5AF2]/20 dark:text-[#BF5AF2]">
+                    <FiCheckCircle className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
+                    Key Decisions
+                  </h3>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 2. ACTION ITEMS HIGHLIGHTED */}
-          <div className="bg-slate-900/90 rounded-xl border border-slate-800 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="p-1 rounded bg-emerald-500/20 text-emerald-400">
-                  <FiCheckSquare className="w-3.5 h-3.5" />
-                </span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Action Items & Tasks ({outcome.actionItems.length})
-                </h3>
+                <Badge variant="purple" size="sm">
+                  {outcome.decisions.length}
+                </Badge>
               </div>
-              <span className="text-[10px] text-slate-400">Click to complete</span>
-            </div>
 
-            <div className="space-y-2">
-              {outcome.actionItems.map((item) => {
-                const isCompleted = item.status === "Completed";
-                const priorityColor =
-                  item.priority === "High"
-                    ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
-                    : item.priority === "Medium"
-                    ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
-                    : "bg-slate-700 text-slate-300 border-slate-600";
-
-                return (
+              <div className="space-y-2 pt-1">
+                {outcome.decisions.map((decision, idx) => (
                   <div
-                    key={item.id}
-                    onClick={() => toggleActionItemStatus(selectedMeeting.id, item.id)}
-                    className={`p-2.5 rounded-lg border transition-all cursor-pointer select-none ${
-                      isCompleted
-                        ? "bg-slate-900/40 border-slate-800/80 opacity-60"
-                        : "bg-slate-800/60 border-slate-700/80 hover:border-indigo-500/40"
-                    }`}
+                    key={idx}
+                    className="flex items-start gap-2.5 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.05] text-xs leading-relaxed"
                   >
-                    <div className="flex items-start gap-2">
-                      <button className="mt-0.5 text-slate-400 hover:text-white">
-                        {isCompleted ? (
-                          <FiCheckSquare className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <FiSquare className="w-3.5 h-3.5" />
-                        )}
+                    <span className="w-2 h-2 rounded-full bg-[#AF52DE] mt-1.5 flex-shrink-0" />
+                    <p className="text-[#1D1D1F] dark:text-[#F5F5F7] font-medium">{decision}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* 2. ACTION ITEMS & TASKS (Apple Reminders Style) */}
+            <Card padding="md" className="space-y-2.5 border-l-4 border-l-[#0071E3] h-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#0A84FF]/20 dark:text-[#0A84FF]">
+                    <FiCheckSquare className="w-4 h-4" />
+                  </span>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
+                    Action Items & Tasks
+                  </h3>
+                </div>
+                <Badge variant="blue" size="sm">
+                  {outcome.actionItems.length}
+                </Badge>
+              </div>
+
+              <div className="space-y-2 pt-1">
+                {outcome.actionItems.map((item) => {
+                  const isCompleted = item.status === "Completed";
+                  const priorityVariant =
+                    item.priority === "High"
+                      ? "red"
+                      : item.priority === "Medium"
+                      ? "orange"
+                      : "gray";
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        toggleActionItemStatus(selectedMeeting.id, item.id);
+                        showToast(
+                          isCompleted
+                            ? `Marked "${item.task.slice(0, 20)}..." pending`
+                            : `Completed "${item.task.slice(0, 20)}..."`,
+                          "info"
+                        );
+                      }}
+                      className={`p-3 rounded-xl border transition-all duration-150 cursor-pointer select-none flex items-start gap-2.5 ${
+                        isCompleted
+                          ? "bg-black/[0.015] dark:bg-white/[0.02] border-black/[0.03] dark:border-white/[0.04] opacity-50"
+                          : "bg-black/[0.02] dark:bg-white/[0.03] border-black/[0.04] dark:border-white/[0.06] hover:border-[#0071E3]/30"
+                      }`}
+                    >
+                      {/* Apple Style Circular Checkbox */}
+                      <button
+                        className={`w-4 h-4 mt-0.5 rounded-full border flex items-center justify-center transition-all flex-shrink-0 ${
+                          isCompleted
+                            ? "bg-[#34C759] border-[#34C759] text-white"
+                            : "border-black/30 dark:border-white/30 hover:border-[#0071E3]"
+                        }`}
+                      >
+                        {isCompleted && <FiCheck className="w-2.5 h-2.5 stroke-[3]" />}
                       </button>
 
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-xs font-medium leading-snug ${
-                            isCompleted ? "line-through text-slate-400" : "text-slate-100"
+                          className={`text-xs font-medium leading-snug transition-all ${
+                            isCompleted
+                              ? "line-through text-[#86868B] dark:text-[#A1A1A6]"
+                              : "text-[#1D1D1F] dark:text-[#F5F5F7]"
                           }`}
                         >
                           {item.task}
                         </p>
 
-                        <div className="flex items-center gap-2 mt-1.5 text-[10px]">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700 font-medium">
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.07] text-[#1D1D1F] dark:text-[#F5F5F7] font-medium">
                             👤 {item.owner}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.07] text-[#86868B] dark:text-[#A1A1A6]">
                             📅 {item.deadline}
                           </span>
-                          <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold ${priorityColor}`}>
+                          <Badge variant={priorityVariant} size="sm">
                             {item.priority}
-                          </span>
+                          </Badge>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </Card>
           </div>
 
-          {/* 3. DETAILED SUMMARY & DISCUSSION */}
-          <div className="bg-slate-900/70 rounded-xl border border-slate-800 p-3 space-y-2">
-            <div className="flex items-center gap-1.5">
-              <span className="p-1 rounded bg-indigo-500/20 text-indigo-400">
-                <FiFileText className="w-3.5 h-3.5" />
+          {/* 3. EXECUTIVE SUMMARY & DISCUSSION */}
+          <Card padding="lg" className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-black/[0.05] dark:bg-white/[0.08] text-[#1D1D1F] dark:text-[#F5F5F7]">
+                <FiFileText className="w-4 h-4" />
               </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
                 Executive Summary
               </h3>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+
+            <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-[#E5E5EA] leading-relaxed p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.05]">
               {outcome.executiveSummary}
             </p>
 
             {outcome.detailedDiscussion.length > 0 && (
-              <div className="pt-1 space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-400">Discussion Highlights</span>
-                {outcome.detailedDiscussion.map((point, idx) => (
-                  <p key={idx} className="text-[11px] text-slate-400 leading-relaxed pl-2 border-l-2 border-slate-700">
-                    {point}
-                  </p>
-                ))}
+              <div className="pt-2 space-y-2">
+                <span className="text-xs font-semibold text-[#86868B] dark:text-[#A1A1A6]">
+                  Discussion Highlights
+                </span>
+                <div className="space-y-1.5">
+                  {outcome.detailedDiscussion.map((point, idx) => (
+                    <div
+                      key={idx}
+                      className="text-xs text-[#86868B] dark:text-[#A1A1A6] leading-relaxed pl-3 border-l-2 border-[#0071E3]/40"
+                    >
+                      {point}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
+          </Card>
 
-          {/* 4. RISKS & BLOCKERS */}
-          {outcome.risks.length > 0 && (
-            <div className="bg-rose-950/20 rounded-xl border border-rose-500/30 p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="p-1 rounded bg-rose-500/20 text-rose-400">
-                  <FiAlertTriangle className="w-3.5 h-3.5" />
-                </span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-300">
-                  Risks & Blockers ({outcome.risks.length})
-                </h3>
-              </div>
-              <div className="space-y-1">
-                {outcome.risks.map((risk, idx) => (
-                  <div key={idx} className="text-xs text-rose-200 flex items-start gap-1.5">
-                    <span className="text-rose-400">•</span>
-                    <span>{risk}</span>
+          {/* 4. RISKS & OPEN QUESTIONS ROW */}
+          {(outcome.risks.length > 0 || outcome.openQuestions.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Risks & Blockers */}
+              {outcome.risks.length > 0 && (
+                <Card padding="md" className="space-y-2 border-l-4 border-l-[#FF3B30] bg-[#FF3B30]/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-[#FF3B30]/10 text-[#FF3B30]">
+                      <FiAlertTriangle className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#D70015] dark:text-[#FF453A]">
+                      Risks & Blockers ({outcome.risks.length})
+                    </h3>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  <div className="space-y-1.5 pt-1">
+                    {outcome.risks.map((risk, idx) => (
+                      <div key={idx} className="text-xs text-[#D70015] dark:text-[#FF6961] flex items-start gap-1.5">
+                        <span>•</span>
+                        <span className="leading-snug">{risk}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
 
-          {/* 5. OPEN QUESTIONS */}
-          {outcome.openQuestions.length > 0 && (
-            <div className="bg-amber-950/20 rounded-xl border border-amber-500/30 p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="p-1 rounded bg-amber-500/20 text-amber-400">
-                  <FiHelpCircle className="w-3.5 h-3.5" />
-                </span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                  Open Questions ({outcome.openQuestions.length})
-                </h3>
-              </div>
-              <div className="space-y-1">
-                {outcome.openQuestions.map((q, idx) => (
-                  <div key={idx} className="text-xs text-amber-200 flex items-start gap-1.5">
-                    <span className="text-amber-400">•</span>
-                    <span>{q}</span>
+              {/* Open Questions */}
+              {outcome.openQuestions.length > 0 && (
+                <Card padding="md" className="space-y-2 border-l-4 border-l-[#FF9500] bg-[#FF9500]/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-[#FF9500]/10 text-[#FF9500]">
+                      <FiHelpCircle className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#C93400] dark:text-[#FF9F0A]">
+                      Open Questions ({outcome.openQuestions.length})
+                    </h3>
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-1.5 pt-1">
+                    {outcome.openQuestions.map((q, idx) => (
+                      <div key={idx} className="text-xs text-[#C93400] dark:text-[#FFB340] flex items-start gap-1.5">
+                        <span>•</span>
+                        <span className="leading-snug">{q}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </div>
           )}
         </div>

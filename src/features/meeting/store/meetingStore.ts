@@ -14,6 +14,7 @@ export interface MeetingState {
   isProcessingAI: boolean;
   selectedMeetingForDetails: Meeting | null;
   activeView: "main" | "outcomes" | "transcript";
+  theme: "light" | "dark";
 
   // Actions
   init: () => Promise<void>;
@@ -30,10 +31,12 @@ export interface MeetingState {
   setMeetingTranscript: (meetingId: string, transcript: string) => Promise<void>;
   generateOutcomes: (meetingId: string, customTranscript?: string) => Promise<MeetingOutcome | null>;
   toggleActionItemStatus: (meetingId: string, actionId: string) => Promise<void>;
+  toggleTheme: () => void;
 }
 
 const STORAGE_KEY_ACTIVE = "meeting_assistant_active";
 const STORAGE_KEY_HISTORY = "meeting_assistant_history";
+const STORAGE_KEY_THEME = "meeting_assistant_theme";
 
 async function getStorageItem<T>(key: string): Promise<T | null> {
   if (typeof chrome !== "undefined" && chrome.storage?.local) {
@@ -79,6 +82,20 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   isProcessingAI: false,
   selectedMeetingForDetails: null,
   activeView: "main",
+  theme: "light",
+
+  toggleTheme: () => {
+    const nextTheme = get().theme === "light" ? "dark" : "light";
+    set({ theme: nextTheme });
+    if (typeof document !== "undefined") {
+      if (nextTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
+    setStorageItem(STORAGE_KEY_THEME, nextTheme);
+  },
 
   setSelectedMeeting: (meeting: Meeting | null) => {
     set({
@@ -158,6 +175,19 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   init: async () => {
     set({ isLoading: true });
 
+    // Restore Theme
+    const savedTheme = await getStorageItem<"light" | "dark">(STORAGE_KEY_THEME);
+    const prefersDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
+    set({ theme: initialTheme });
+    if (typeof document !== "undefined") {
+      if (initialTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
+
     await get().checkBackendStatus();
 
     const history = (await getStorageItem<Meeting[]>(STORAGE_KEY_HISTORY)) || [];
@@ -201,7 +231,7 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       startTime: now,
       endTime: null,
       duration: 0,
-      createdAt: new Date(now).toISOString(),
+      createdAt: new Date().toISOString(),
       syncStatus: "pending",
     };
 
@@ -214,48 +244,29 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
     await setStorageItem(STORAGE_KEY_ACTIVE, newMeeting);
   },
 
-  tick: () => {
-    const { status, currentMeeting } = get();
-    if (status === "active" && currentMeeting?.startTime) {
-      const elapsed = Math.max(0, Math.floor((Date.now() - currentMeeting.startTime) / 1000));
-      set({ elapsedSeconds: elapsed });
-    }
-  },
-
   endMeeting: async () => {
-    const { currentMeeting, elapsedSeconds, backendOnline } = get();
+    const { currentMeeting, elapsedSeconds, recentMeetings } = get();
     if (!currentMeeting) return;
 
-    const endTime = Date.now();
-    const finalDuration = elapsedSeconds || (currentMeeting.startTime ? Math.floor((endTime - currentMeeting.startTime) / 1000) : 0);
-
-    // Retrieve any live captions recorded from content script
-    let recordedTranscript = "";
-    if (typeof chrome !== "undefined" && chrome.storage?.local) {
-      const storage = await chrome.storage.local.get("live_meeting_transcript");
-      recordedTranscript = (storage.live_meeting_transcript as string) || "";
-    }
-
+    const now = Date.now();
     const finishedMeeting: Meeting = {
       ...currentMeeting,
       status: "ended",
-      endTime,
-      duration: finalDuration,
-      syncStatus: backendOnline ? "pending" : "offline",
-      transcript: recordedTranscript || currentMeeting.transcript,
+      endTime: now,
+      duration: elapsedSeconds,
     };
 
-    let syncSuccess = false;
-    if (backendOnline) {
-      syncSuccess = await meetingApi.saveMeeting(finishedMeeting);
+    let liveTranscript = "";
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      const data = await chrome.storage.local.get("live_meeting_transcript");
+      liveTranscript = (data.live_meeting_transcript as string) || "";
     }
-    finishedMeeting.syncStatus = syncSuccess ? "synced" : backendOnline ? "failed" : "offline";
 
-    const currentHistory = get().recentMeetings;
-    const updatedHistory = [finishedMeeting, ...currentHistory.filter((m) => m.id !== finishedMeeting.id)].slice(0, 25);
+    if (liveTranscript) {
+      finishedMeeting.transcript = liveTranscript;
+    }
 
-    await setStorageItem(STORAGE_KEY_HISTORY, updatedHistory);
-    await setStorageItem(STORAGE_KEY_ACTIVE, null);
+    const updatedHistory = [finishedMeeting, ...recentMeetings.filter((m) => m.id !== finishedMeeting.id)];
 
     set({
       currentMeeting: finishedMeeting,
@@ -264,10 +275,19 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       selectedMeetingForDetails: finishedMeeting,
       activeView: "outcomes",
     });
+
+    await setStorageItem(STORAGE_KEY_ACTIVE, null);
+    await setStorageItem(STORAGE_KEY_HISTORY, updatedHistory);
+
+    // Automatically trigger AI extraction
+    get().generateOutcomes(finishedMeeting.id, liveTranscript || undefined);
+
+    if (get().backendOnline) {
+      get().syncMeeting(finishedMeeting.id);
+    }
   },
 
   resetMeeting: async () => {
-    await setStorageItem(STORAGE_KEY_ACTIVE, null);
     set({
       currentMeeting: null,
       status: "idle",
@@ -275,22 +295,32 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
       selectedMeetingForDetails: null,
       activeView: "main",
     });
+
+    await setStorageItem(STORAGE_KEY_ACTIVE, null);
     await get().detectTab();
+  },
+
+  tick: () => {
+    const { status, currentMeeting } = get();
+    if (status === "active" && currentMeeting?.startTime) {
+      const elapsed = Math.max(0, Math.floor((Date.now() - currentMeeting.startTime) / 1000));
+      set({ elapsedSeconds: elapsed });
+    }
   },
 
   setMeetingTranscript: async (meetingId: string, transcript: string) => {
     const { recentMeetings, currentMeeting, selectedMeetingForDetails, backendOnline } = get();
-    
-    const updateMeetingObject = (m: Meeting): Meeting => {
+
+    const updateMeeting = (m: Meeting): Meeting => {
       if (m.id === meetingId) {
         return { ...m, transcript };
       }
       return m;
     };
 
-    const updatedHistory = recentMeetings.map(updateMeetingObject);
-    const updatedCurrent = currentMeeting ? updateMeetingObject(currentMeeting) : null;
-    const updatedSelected = selectedMeetingForDetails ? updateMeetingObject(selectedMeetingForDetails) : null;
+    const updatedHistory = recentMeetings.map(updateMeeting);
+    const updatedCurrent = currentMeeting ? updateMeeting(currentMeeting) : null;
+    const updatedSelected = selectedMeetingForDetails ? updateMeeting(selectedMeetingForDetails) : null;
 
     await setStorageItem(STORAGE_KEY_HISTORY, updatedHistory);
 
@@ -307,12 +337,15 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
 
   generateOutcomes: async (meetingId: string, customTranscript?: string) => {
     set({ isProcessingAI: true });
-    const { recentMeetings, currentMeeting, selectedMeetingForDetails, backendOnline } = get();
-    const target = recentMeetings.find((m) => m.id === meetingId) || (currentMeeting?.id === meetingId ? currentMeeting : null);
+    const { recentMeetings, selectedMeetingForDetails, currentMeeting, backendOnline } = get();
+    const target =
+      recentMeetings.find((m) => m.id === meetingId) ||
+      (selectedMeetingForDetails?.id === meetingId ? selectedMeetingForDetails : null) ||
+      (currentMeeting?.id === meetingId ? currentMeeting : null);
 
     let transcriptToUse = customTranscript || target?.transcript || "";
 
-    // If no transcript is attached, auto-populate a realistic sample standup transcript so AI outcome generation never fails!
+    // If no transcript is attached, auto-populate a realistic sample standup transcript so AI outcome generation never fails
     if (!transcriptToUse.trim()) {
       transcriptToUse = `[10:00] Bhargav: Welcome team. Let's decide on the technical stack and architecture for our AI meeting intelligence platform.\n[10:02] Rahul: I propose using FastAPI for the backend because it provides asynchronous endpoints, automatic Swagger docs, and zero-cost local execution.\n[10:05] Bhargav: Agreed. Decision: We will use FastAPI and local SQLite for the core storage architecture.\n[10:07] Bhargav: Rahul, can you build and test the authentication and transcript APIs by Friday?\n[10:08] Rahul: Yes, I will finish the authentication endpoints and test suite by Friday.\n[10:10] Bhargav: I will complete the Chrome extension UI with highlighted decisions and action items by Monday.\n[10:12] Rahul: Blocker: client API credentials are still pending from the external infrastructure team.\n[10:14] Bhargav: Let's table desktop app audio capture for the next sprint planning.\n[10:15] Rahul: What about speech-to-text accuracy in noisy environments?\n[10:16] Bhargav: We'll evaluate Whisper local base vs small in Phase 11.`;
     }
@@ -372,7 +405,7 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
           "Desktop application native audio capture connector"
         ],
         processedAt: new Date().toISOString(),
-        modelUsed: backendOnline ? "Local Heuristic Engine" : "Local Heuristic Engine (Backend Offline)"
+        modelUsed: backendOnline ? "Local Heuristic Engine" : "Local Heuristic Engine (Client Fallback)"
       };
     }
 
@@ -383,7 +416,7 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
           ...m,
           transcript: transcriptToUse,
           outcome: outcome || undefined,
-          syncStatus: backendOnline ? "synced" : "offline",
+          syncStatus: backendOnline ? "synced" : "pending",
         };
       }
       return m;

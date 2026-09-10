@@ -1,6 +1,9 @@
 ﻿import React, { useState, useEffect } from "react";
-import { FiArrowLeft, FiUploadCloud, FiZap, FiFileText, FiCheck, FiTrash2, FiEdit3 } from "react-icons/fi";
+import { FiArrowLeft, FiUploadCloud, FiZap, FiFileText, FiTrash2, FiEdit3 } from "react-icons/fi";
 import { useMeetingStore } from "../store/meetingStore";
+import Card from "../../../shared/components/ui/Card";
+import AppleButton from "../../../shared/components/ui/AppleButton";
+import { useToast } from "../../../shared/components/ui/Toast";
 
 export const TranscriptModal: React.FC = () => {
   const selectedMeeting = useMeetingStore((state) => state.selectedMeetingForDetails);
@@ -9,8 +12,8 @@ export const TranscriptModal: React.FC = () => {
   const generateOutcomes = useMeetingStore((state) => state.generateOutcomes);
   const isProcessingAI = useMeetingStore((state) => state.isProcessingAI);
 
+  const { showToast } = useToast();
   const [text, setText] = useState("");
-  const [saved, setSaved] = useState(false);
 
   const sampleTranscript = `[10:00] Bhargav: Welcome team. Let's decide on the technical stack and architecture for our AI meeting intelligence platform.
 [10:02] Rahul: I propose using FastAPI for the backend because it provides asynchronous endpoints, automatic Swagger docs, and zero-cost local execution.
@@ -48,6 +51,7 @@ export const TranscriptModal: React.FC = () => {
       const content = event.target?.result as string;
       if (content) {
         setText(content);
+        showToast("Transcript file loaded", "info");
       }
     };
     reader.readAsText(file);
@@ -55,12 +59,12 @@ export const TranscriptModal: React.FC = () => {
 
   const handleSave = async () => {
     await setMeetingTranscript(selectedMeeting.id, text);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    showToast("Transcript saved successfully", "success");
   };
 
   const handleSaveAndProcess = async () => {
     await setMeetingTranscript(selectedMeeting.id, text);
+    showToast("Analyzing transcript with AI...", "info");
     await generateOutcomes(selectedMeeting.id, text);
     setActiveView("outcomes");
   };
@@ -68,40 +72,47 @@ export const TranscriptModal: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col p-3.5 space-y-3 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.08]">
         <button
           onClick={() => setActiveView("outcomes")}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-1 text-xs font-medium text-[#0071E3] dark:text-[#0A84FF] hover:opacity-80 transition-opacity cursor-pointer select-none"
         >
           <FiArrowLeft className="w-3.5 h-3.5" />
-          Back to Outcomes
+          <span>Outcomes</span>
         </button>
-        <span className="text-[11px] text-indigo-400 font-medium flex items-center gap-1">
-          <FiFileText className="w-3 h-3" />
+        <span className="text-[11px] text-[#86868B] dark:text-[#A1A1A6] font-medium flex items-center gap-1">
+          <FiFileText className="w-3 h-3 text-[#0071E3]" />
           Transcript Manager
         </span>
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-white">Meeting Transcript</h3>
-        <p className="text-[11px] text-slate-400 mt-0.5">
-          Paste conversation notes, upload a transcript, or load a sample conversation.
+        <h2 className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
+          Meeting Transcript
+        </h2>
+        <p className="text-[11px] text-[#86868B] dark:text-[#A1A1A6] mt-0.5">
+          Paste conversation notes, upload a transcript file, or load sample dialogue.
         </p>
       </div>
 
       {/* Action shortcuts */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => setText(sampleTranscript)}
-          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-[11px] font-medium cursor-pointer transition-colors"
+        <AppleButton
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          icon={<FiEdit3 className="w-3 h-3 text-[#0071E3]" />}
+          onClick={() => {
+            setText(sampleTranscript);
+            showToast("Sample transcript inserted", "info");
+          }}
         >
-          <FiEdit3 className="w-3 h-3" />
-          Insert Sample Transcript
-        </button>
+          Sample Transcript
+        </AppleButton>
 
-        <label className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-[11px] cursor-pointer transition-colors">
-          <FiUploadCloud className="w-3 h-3 text-slate-400" />
-          Upload .txt
+        <label className="flex-1 h-7 px-3 text-xs rounded-full inline-flex items-center justify-center gap-1.5 font-medium select-none bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-[#1D1D1F] dark:text-[#F5F5F7] border border-black/[0.04] dark:border-white/[0.06] transition-all cursor-pointer">
+          <FiUploadCloud className="w-3 h-3 text-[#86868B]" />
+          <span>Upload File</span>
           <input
             type="file"
             accept=".txt,.vtt,.srt"
@@ -112,8 +123,11 @@ export const TranscriptModal: React.FC = () => {
 
         {text && (
           <button
-            onClick={() => setText("")}
-            className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900 border border-slate-700 rounded-lg transition-colors cursor-pointer"
+            onClick={() => {
+              setText("");
+              showToast("Transcript cleared", "info");
+            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-black/[0.04] hover:bg-[#FF3B30]/10 hover:text-[#FF3B30] text-[#86868B] dark:text-[#A1A1A6] transition-colors cursor-pointer"
             title="Clear text"
           >
             <FiTrash2 className="w-3 h-3" />
@@ -122,34 +136,38 @@ export const TranscriptModal: React.FC = () => {
       </div>
 
       {/* Textarea */}
-      <div className="flex-1 min-h-[160px] flex flex-col">
+      <Card padding="none" className="flex-1 min-h-[170px] overflow-hidden flex flex-col">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={`[10:15] Bhargav: We agreed to use FastAPI for the backend architecture.\n[10:18] Rahul: I will build and test the authentication API by Friday.\n[10:20] Bhargav: Note that client API credentials are still pending.`}
-          className="w-full flex-1 min-h-[160px] p-2.5 bg-slate-900/90 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 leading-relaxed resize-none"
+          placeholder={`[10:00] Bhargav: Let's align on next steps.\n[10:02] Rahul: I will finalize the backend API by Friday.\n[10:05] Bhargav: Decision: We will use SQLite for fast local sync.`}
+          className="w-full flex-1 p-3 bg-transparent text-xs font-mono text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#86868B] focus:outline-none leading-relaxed resize-none"
         />
-      </div>
+      </Card>
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2 pt-1">
-        <button
-          onClick={handleSave}
+        <AppleButton
+          variant="secondary"
+          size="md"
+          className="flex-1"
           disabled={!text.trim()}
-          className="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          onClick={handleSave}
         >
-          {saved ? <FiCheck className="w-3.5 h-3.5 text-emerald-400" /> : null}
-          {saved ? "Saved" : "Save Transcript"}
-        </button>
+          Save Transcript
+        </AppleButton>
 
-        <button
-          onClick={handleSaveAndProcess}
+        <AppleButton
+          variant="primary"
+          size="md"
+          className="flex-1 shadow-md shadow-[#0071E3]/25"
           disabled={!text.trim() || isProcessingAI}
-          className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 shadow-md shadow-indigo-900/30 transition-all cursor-pointer"
+          isLoading={isProcessingAI}
+          icon={<FiZap className="w-3.5 h-3.5 fill-current" />}
+          onClick={handleSaveAndProcess}
         >
-          <FiZap className="w-3.5 h-3.5 fill-current" />
-          {isProcessingAI ? "Processing..." : "Generate AI Outcomes"}
-        </button>
+          Extract Outcomes
+        </AppleButton>
       </div>
     </div>
   );
