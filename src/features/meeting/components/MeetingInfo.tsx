@@ -1,4 +1,3 @@
-const MeetingInfo = () => {
 import React from "react";
 import { FiEdit2, FiLink, FiLayers, FiHash } from "react-icons/fi";
 import { useMeetingStore } from "../store/meetingStore";
@@ -17,13 +16,7 @@ export const MeetingInfo: React.FC = () => {
   }
 
   return (
-    <section>
-      <p>Meeting info</p>
-    </section>
-  )
-}
     <div className="bg-slate-800/60 rounded-lg border border-slate-700/60 p-3.5 space-y-3">
-      {/* Title Field */}
       <div>
         <label className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5 mb-1">
           <FiEdit2 className="w-3 h-3 text-slate-500" />
@@ -39,10 +32,7 @@ export const MeetingInfo: React.FC = () => {
         />
       </div>
 
-export default MeetingInfo
-      {/* Metadata Badges */}
       <div className="grid grid-cols-2 gap-2 text-[11px]">
-        {/* Platform */}
         <div className="bg-slate-900/50 rounded border border-slate-800 p-2">
           <span className="text-[10px] text-slate-400 flex items-center gap-1">
             <FiLayers className="w-3 h-3 text-indigo-400" />
@@ -51,7 +41,6 @@ export default MeetingInfo
           <p className="text-white font-medium mt-0.5 truncate">{currentMeeting.platform}</p>
         </div>
 
-        {/* Meeting ID */}
         <div className="bg-slate-900/50 rounded border border-slate-800 p-2">
           <span className="text-[10px] text-slate-400 flex items-center gap-1">
             <FiHash className="w-3 h-3 text-cyan-400" />
@@ -63,7 +52,6 @@ export default MeetingInfo
         </div>
       </div>
 
-      {/* URL */}
       {currentMeeting.url && (
         <div className="flex items-center gap-1.5 text-[10px] text-slate-400 bg-slate-900/40 px-2 py-1.5 rounded border border-slate-800/80">
           <FiLink className="w-3 h-3 text-slate-500 flex-shrink-0" />

@@ -1,4 +1,4 @@
-import { defineManifest } from "@crxjs/vite-plugin";
+﻿import { defineManifest } from "@crxjs/vite-plugin";
 
 export default defineManifest({
   manifest_version: 3,
@@ -7,7 +7,7 @@ export default defineManifest({
 
   version: "1.0.0",
 
-  description: "AI Meeting Assistant",
+  description: "AI Meeting Assistant - Capture, Track, and Automate",
 
   action: {
     default_popup: "index.html"
@@ -26,7 +26,7 @@ export default defineManifest({
   ],
 
   background: {
-    service_worker: "src/background/index.ts",
+    service_worker: "src/background/background.ts",
     type: "module"
   },
 
@@ -37,9 +37,8 @@ export default defineManifest({
         "https://teams.microsoft.com/*",
         "https://*.zoom.us/*"
       ],
-
       js: [
-        "src/content/index.ts"
+        "src/content/content.ts"
       ]
     }
   ]

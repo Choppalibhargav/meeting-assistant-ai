@@ -1,44 +1,17 @@
-# AI Meeting Assistant Roadmap
-# 🚀 Project: AI Meeting Intelligence & Automation Platform
+﻿# 🚀 Project: AI Meeting Intelligence & Automation Platform
 
-## Phase 1
-- [ ] Chrome Extension
-- [ ] Meeting Detection
-- [ ] Timer
-- [ ] Metadata Storage
 ### Core Idea
 
-## Phase 2
-- [ ] Audio Capture
-- [ ] Microphone Selection
-- [ ] Recording Controls
 A **browser extension first**, eventually becoming a **meeting bot + desktop application**, that turns meetings into structured, actionable project information.
 
-## Phase 3
-- [ ] Speech-to-Text
-- [ ] Live Transcript
 The core promise:
 
-## Phase 4
-- [ ] AI Summaries
-- [ ] Action Items
-- [ ] Meeting Minutes
 > **Meeting → Understand → Remember → Create Tasks → Track → Carry Forward**
 
-## Phase 5
-- [ ] Jira Integration
-- [ ] Ticket Generation
-- [ ] Ticket Suggestions
 ---
 
-## Phase 6
-- [ ] Teams Bot
-- [ ] Zoom Bot
 ## 🎯 What the Final Product Should Do
 
-## Phase 7
-- [ ] Electron Desktop App
-- [ ] Auto Updates
 After a meeting, the system should understand:
 
 ### 📝 Meeting Summary

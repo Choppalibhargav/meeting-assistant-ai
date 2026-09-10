@@ -1,4 +1,3 @@
-const Timer = () => {
 import React, { useEffect } from "react";
 import { FiClock } from "react-icons/fi";
 import { useMeetingStore } from "../store/meetingStore";
@@ -12,9 +11,7 @@ export const Timer: React.FC = () => {
   useEffect(() => {
     if (status !== "active") return;
 
-    // Immediately sync
     tick();
-
     const interval = setInterval(() => {
       tick();
     }, 1000);
@@ -45,8 +42,6 @@ export const Timer: React.FC = () => {
   };
 
   return (
-    <div>
-      <p>Timer</p>
     <div className="bg-slate-900/80 rounded-lg border border-slate-800 p-4 flex flex-col items-center justify-center relative overflow-hidden">
       {status === "active" && (
         <div className="absolute top-2 right-2 flex items-center gap-1">
@@ -73,10 +68,7 @@ export const Timer: React.FC = () => {
         )}
       </div>
     </div>
-  )
-}
   );
 };
 
-export default Timer
 export default Timer;

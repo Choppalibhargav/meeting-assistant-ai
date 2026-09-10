@@ -1,6 +1,5 @@
-const ActionButtons = () => {
-import React from "react";
-import { FiPlay, FiSquare, FiRotateCcw, FiUploadCloud, FiCheck } from "react-icons/fi";
+﻿import React from "react";
+import { FiPlay, FiSquare, FiRotateCcw, FiUploadCloud, FiCheck, FiZap } from "react-icons/fi";
 import { useMeetingStore } from "../../../features/meeting/store/meetingStore";
 
 export const ActionButtons: React.FC = () => {
@@ -11,6 +10,7 @@ export const ActionButtons: React.FC = () => {
   const resetMeeting = useMeetingStore((state) => state.resetMeeting);
   const syncMeeting = useMeetingStore((state) => state.syncMeeting);
   const backendOnline = useMeetingStore((state) => state.backendOnline);
+  const setSelectedMeeting = useMeetingStore((state) => state.setSelectedMeeting);
 
   if (status === "active") {
     return (
@@ -20,7 +20,7 @@ export const ActionButtons: React.FC = () => {
           className="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-900/30 active:scale-[0.99] transition-all cursor-pointer"
         >
           <FiSquare className="w-3.5 h-3.5 fill-current" />
-          End Meeting & Save
+          End Meeting & Process Outcomes
         </button>
       </div>
     );
@@ -29,30 +29,39 @@ export const ActionButtons: React.FC = () => {
   if (status === "ended") {
     return (
       <div className="space-y-2">
+        {/* Prominent View Outcomes Button */}
+        <button
+          onClick={() => currentMeeting && setSelectedMeeting(currentMeeting)}
+          className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30 active:scale-[0.99] transition-all cursor-pointer"
+        >
+          <FiZap className="w-3.5 h-3.5 fill-current" />
+          View AI Summary & Outcomes
+        </button>
+
         <div className="flex items-center gap-2">
           {currentMeeting?.syncStatus !== "synced" ? (
             <button
               onClick={() => currentMeeting && syncMeeting(currentMeeting.id)}
               disabled={!backendOnline}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
                 backendOnline
-                  ? "bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer"
-                  : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                  ? "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer"
+                  : "bg-slate-900 text-slate-500 cursor-not-allowed border border-slate-800"
               }`}
             >
               <FiUploadCloud className="w-3.5 h-3.5" />
-              {backendOnline ? "Sync to Backend" : "Backend Offline"}
+              {backendOnline ? "Sync SQLite" : "Backend Offline"}
             </button>
           ) : (
-            <div className="flex-1 py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center justify-center gap-1.5">
+            <div className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center justify-center gap-1.5">
               <FiCheck className="w-3.5 h-3.5 text-emerald-400" />
-              Synced to SQLite
+              Saved to SQLite
             </div>
           )}
 
           <button
             onClick={() => resetMeeting()}
-            className="flex-1 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
             <FiRotateCcw className="w-3.5 h-3.5" />
             New Session
@@ -64,7 +73,6 @@ export const ActionButtons: React.FC = () => {
 
   return (
     <div>
-      <button>Action</button>
       <button
         onClick={() => startMeeting()}
         className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 active:scale-[0.99] transition-all cursor-pointer"
@@ -73,10 +81,7 @@ export const ActionButtons: React.FC = () => {
         Start Meeting Capture
       </button>
     </div>
-  )
-}
   );
 };
 
-export default ActionButtons
 export default ActionButtons;

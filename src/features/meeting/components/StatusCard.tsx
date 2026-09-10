@@ -1,4 +1,3 @@
-const StatusCard = () => {
 import React from "react";
 import { FiVideo, FiActivity, FiCheckCircle, FiInfo } from "react-icons/fi";
 import { useMeetingStore } from "../store/meetingStore";
@@ -48,8 +47,6 @@ export const StatusCard: React.FC = () => {
   const config = getStatusConfig();
 
   return (
-    <div>
-      <p>Status card</p>
     <div className={`p-3 rounded-lg border ${config.bg} flex items-start gap-3 transition-all`}>
       <div className="relative mt-0.5">
         <div className="p-1.5 rounded-md bg-slate-900/60 border border-white/5">
@@ -70,10 +67,7 @@ export const StatusCard: React.FC = () => {
         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{config.subtitle}</p>
       </div>
     </div>
-  )
-}
   );
 };
 
-export default StatusCard
 export default StatusCard;

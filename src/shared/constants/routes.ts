@@ -2,7 +2,6 @@ export const SUPPORTED_MEETING_HOSTS = [
   "meet.google.com",
   "teams.microsoft.com",
   "zoom.us",
-];
 ] as const;
 
 export type SupportedHost = (typeof SUPPORTED_MEETING_HOSTS)[number];

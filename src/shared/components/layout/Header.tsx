@@ -1,4 +1,3 @@
-export default function Header() {
 import React from "react";
 import { FiCpu, FiServer, FiRefreshCw } from "react-icons/fi";
 import { useMeetingStore } from "../../../features/meeting/store/meetingStore";
@@ -8,10 +7,6 @@ export const Header: React.FC = () => {
   const checkBackendStatus = useMeetingStore((state) => state.checkBackendStatus);
 
   return (
-    <header className="border-b p-4">
-      <h1 className="text-lg font-bold">
-        🤖 Meeting Assistant
-      </h1>
     <header className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
@@ -28,9 +23,6 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      <p className="text-sm text-gray-500">
-        AI Meeting Companion
-      </p>
       <button
         onClick={() => checkBackendStatus()}
         title="Check FastAPI Backend Connection (http://localhost:8000)"
@@ -51,7 +43,6 @@ export const Header: React.FC = () => {
       </button>
     </header>
   );
-}
 };
 
 export default Header;

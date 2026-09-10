@@ -1,4 +1,4 @@
-import type { Meeting } from "../types/meeting";
+﻿import type { Meeting, MeetingOutcome } from "../types/meeting";
 
 const API_BASE_URL = "http://localhost:8000/api";
 
@@ -6,10 +6,11 @@ export interface HealthResponse {
   status: string;
   service: string;
   version: string;
+  ollama_online?: boolean;
 }
 
 export const meetingApi = {
-  async checkHealth(): Promise<boolean> {
+  async checkHealth(): Promise<{ online: boolean; ollamaOnline: boolean }> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -17,9 +18,11 @@ export const meetingApi = {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      return res.ok;
+      if (!res.ok) return { online: false, ollamaOnline: false };
+      const data: HealthResponse = await res.json();
+      return { online: true, ollamaOnline: Boolean(data.ollama_online) };
     } catch {
-      return false;
+      return { online: false, ollamaOnline: false };
     }
   },
 
@@ -41,6 +44,8 @@ export const meetingApi = {
           end_time: meeting.endTime ? new Date(meeting.endTime).toISOString() : null,
           duration: meeting.duration,
           status: meeting.status,
+          transcript: meeting.transcript || null,
+          outcome: meeting.outcome || null,
         }),
         signal: controller.signal,
       });
@@ -49,6 +54,35 @@ export const meetingApi = {
     } catch (err) {
       console.warn("Failed to sync meeting to backend:", err);
       return false;
+    }
+  },
+
+  async uploadTranscript(meetingId: string, transcript: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings/${meetingId}/transcript`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript }),
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn("Failed to upload transcript:", err);
+      return false;
+    }
+  },
+
+  async processMeetingAI(meetingId: string, transcript?: string): Promise<MeetingOutcome | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/meetings/${meetingId}/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript }),
+      });
+      if (!res.ok) return null;
+      return (await res.json()) as MeetingOutcome;
+    } catch (err) {
+      console.warn("Failed to process meeting intelligence:", err);
+      return null;
     }
   },
 
@@ -73,10 +107,11 @@ export const meetingApi = {
         duration: item.duration || 0,
         createdAt: item.created_at || new Date().toISOString(),
         syncStatus: "synced" as const,
+        transcript: item.transcript || undefined,
+        outcome: item.outcome || undefined,
       }));
     } catch {
       return [];
     }
   },
 };
-
