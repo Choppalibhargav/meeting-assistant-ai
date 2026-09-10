@@ -10,6 +10,7 @@
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -31,6 +32,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
+@layer base {
   :root {
     --text: #9ca3af;
     --text-h: #f3f4f6;
@@ -43,10 +45,23 @@
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --color-primary: #6366f1;
+    --color-primary-hover: #4f46e5;
   }
 
   #social .button-icon {
     filter: invert(1) brightness(2);
+  body {
+    width: 380px;
+    min-height: 480px;
+    max-height: 600px;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #0f172a;
+    color: #f8fafc;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 
@@ -80,6 +95,12 @@ h1 {
   @media (max-width: 1024px) {
     font-size: 36px;
     margin: 20px 0;
+  #root {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
   }
 }
 h2 {
